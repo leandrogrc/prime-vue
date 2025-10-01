@@ -11,6 +11,11 @@ const routes = [
     name: "Notícias",
     component: () => import("../src/views/News.vue"),
   },
+  {
+    path: "/keywords",
+    name: "Keywords",
+    component: () => import("../src/views/Keywords.vue"),
+  },
 ];
 
 const router = createRouter({

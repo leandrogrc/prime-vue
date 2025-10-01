@@ -21,7 +21,7 @@ const items = ref([
   },
   {
     label: "Fontes",
-    icon: "pi pi-star",
+    icon: "pi pi-file-o",
     command: () => {
       router.push("/fontes");
     },
@@ -34,10 +34,10 @@ const items = ref([
     },
   },
   {
-    label: "Sobre",
-    icon: "pi pi-envelope",
+    label: "Keywords",
+    icon: "pi pi-hashtag",
     command: () => {
-      router.push("/sobre");
+      router.push("/keywords");
     },
   },
 ]);

@@ -1,22 +1,21 @@
 <template>
-  <div class="news-container">
+  <div class="sources-container">
     <Card>
       <template #title>
         <div class="p-d-flex p-ai-center p-jc-between">
           <span>
-            <i class="pi pi-newspaper p-mr-2"></i>
-            Últimas Notícias
-            <span class="p-text-secondary p-ml-2">
-              (Total: {{ totalItems }})
-            </span>
+            <i class="pi pi-globe p-mr-2"></i>
+            Lista de Notícias
           </span>
-          <Button
-            icon="pi pi-refresh"
-            label="Atualizar"
-            class="p-button-outlined"
-            @click="loadNews"
-            :loading="loading"
-          />
+          <div class="p-d-flex p-ai-center">
+            <span class="p-input-icon-left p-mr-3">
+              <InputText
+                v-model="searchTerm"
+                placeholder="Buscar notícias..."
+                class="p-inputtext-sm"
+              />
+            </span>
+          </div>
         </div>
       </template>
       <template #content>
@@ -26,75 +25,89 @@
           <span class="p-ml-2">Carregando notícias...</span>
         </div>
 
-        <!-- Tabela -->
-        <DataTable
-          :value="news"
-          tableStyle="min-width: 50rem"
-          :lazy="true"
-          :paginator="true"
-          :rows="limit"
-          :totalRecords="totalItems"
-          :rowsPerPageOptions="[5, 10, 20, 50]"
-          paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-          currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} notícias"
-          @page="onPageChange"
-          @sort="onSortChange"
-          responsiveLayout="scroll"
-          stripedRows
-        >
-          <Column field="id" header="ID" :sortable="true" style="width: '80px'">
-            <template #body="slotProps">
-              <Tag :value="slotProps.data.id" />
-            </template>
-          </Column>
+        <!-- Conteúdo quando não estiver carregando -->
+        <div v-else>
+          <div class="p-mb-3 p-d-flex p-ai-center p-jc-between">
+            <span class="p-text-secondary">
+              {{ filteredSources.length }} notícia(s) encontrada(s) de
+              {{ sources.length }}
+            </span>
+            <div v-if="searchTerm" class="p-d-flex p-ai-center">
+              <span class="p-text-secondary p-mr-2">Filtro ativo:</span>
+              <Chip
+                :label="searchTerm"
+                icon="pi pi-filter"
+                removable
+                @remove="clearSearch"
+              />
+            </div>
+          </div>
 
-          <Column field="title" header="Título" :sortable="true">
-            <template #body="slotProps">
-              <div class="news-title">
-                {{ slotProps.data.title }}
+          <DataTable
+            :value="filteredSources"
+            tableStyle="min-width: 50rem"
+            :paginator="true"
+            :rows="10"
+            responsiveLayout="scroll"
+            stripedRows
+            :rowsPerPageOptions="[5, 10, 20, 50]"
+            currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} notícias"
+          >
+            <Column field="id" header="ID" :sortable="true">
+              <template #body="slotProps">
+                <Tag :value="slotProps.data.id" />
+              </template>
+            </Column>
+
+            <Column field="title" header="Título da notícia" :sortable="true">
+              <template #body="slotProps">
+                <div class="p-d-flex p-ai-center">
+                  <i class="pi pi-newspaper p-mr-2" style="color: #6366f1"></i>
+                  <span>{{ slotProps.data.title }}</span>
+                </div>
+              </template>
+            </Column>
+
+            <Column field="source" header="URL" :sortable="true">
+              <template #body="slotProps">
+                <a
+                  :source="slotProps.data.source"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="p-text-link"
+                >
+                  {{ slotProps.data.source }}
+                </a>
+              </template>
+            </Column>
+
+            <Column header="Ações">
+              <template #body="slotProps">
+                <div class="p-d-flex p-gap-1">
+                  <Button
+                    icon="pi pi-external-link"
+                    class="p-button-rounded p-button-help p-button-text"
+                    @click="openWebsite(slotProps.data.href)"
+                  />
+                </div>
+              </template>
+            </Column>
+
+            <template #empty>
+              <div class="p-d-flex p-jc-center p-ai-center p-p-4">
+                <i class="pi pi-search p-mr-2" style="font-size: 2rem"></i>
+                <div>
+                  <h4>Nenhuma fonte encontrada</h4>
+                  <p class="p-text-secondary" v-if="searchTerm">
+                    Tente ajustar os termos da busca: "{{ searchTerm }}"
+                  </p>
+                  <p class="p-text-secondary" v-else>
+                    Nenhuma fonte cadastrada no sistema
+                  </p>
+                </div>
               </div>
             </template>
-          </Column>
-
-          <Column
-            field="source"
-            header="Fonte"
-            :sortable="true"
-            style="width: '120px'"
-          >
-            <template #body="slotProps">
-              <Tag
-                :value="slotProps.data.source"
-                :severity="getSourceSeverity(slotProps.data.source)"
-              />
-            </template>
-          </Column>
-
-          <Column header="Ações" style="width: '100px'">
-            <template #body="slotProps">
-              <Button
-                icon="pi pi-external-link"
-                class="p-button-rounded p-button-help p-button-text"
-                v-tooltip="'Abrir notícia'"
-                @click="openNews(slotProps.data.href)"
-              />
-            </template>
-          </Column>
-
-          <template #empty>
-            <div class="p-d-flex p-jc-center p-ai-center p-p-4">
-              <i class="pi pi-inbox p-mr-2" style="font-size: 2rem"></i>
-              <span>Nenhuma notícia encontrada</span>
-            </div>
-          </template>
-        </DataTable>
-
-        <!-- Informações de paginação -->
-        <div
-          class="p-mt-3 p-d-flex p-ai-center p-jc-between p-text-sm p-text-secondary"
-        >
-          <span>Página {{ currentPage }} de {{ totalPages }}</span>
-          <span>Mostrando {{ news.length }} notícias por página</span>
+          </DataTable>
         </div>
       </template>
     </Card>
@@ -103,116 +116,105 @@
 
 <script setup>
 import { ref, onMounted, computed } from "vue";
+import { useToast } from "primevue/usetoast"; // Agora deve funcionar
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import Card from "primevue/card";
 import Button from "primevue/button";
 import Tag from "primevue/tag";
+import InputText from "primevue/inputtext";
+import Chip from "primevue/chip";
 import ProgressSpinner from "primevue/progressspinner";
+import Toast from "primevue/toast";
 import axios from "axios";
 
-const news = ref([]);
+// Agora o useToast() deve funcionar corretamente
+const toast = useToast();
+const sources = ref([]);
+const searchTerm = ref("");
 const loading = ref(false);
-const currentPage = ref(1);
-const limit = ref(10);
-const totalItems = ref(0);
-const totalPages = ref(0);
 
-// Computed properties
-const paginationInfo = computed(() => {
-  return {
-    page: currentPage.value,
-    limit: limit.value,
-    totalItems: totalItems.value,
-    totalPages: totalPages.value,
-  };
+// Computed para filtrar notícias
+const filteredSources = computed(() => {
+  if (!searchTerm.value) {
+    return sources.value;
+  }
+
+  const term = searchTerm.value.toLowerCase();
+  return sources.value.filter(
+    (source) =>
+      source.title.toLowerCase().includes(term) ||
+      source.href.toLowerCase().includes(term)
+  );
 });
 
-const loadNews = async (page = 1, itemsPerPage = limit.value) => {
+const loadSources = async () => {
   loading.value = true;
   try {
-    const response = await axios.get("http://10.25.115.57:8000/ingest/news", {
-      params: {
-        page: page,
-        limit: itemsPerPage,
-      },
-    });
+    const response = await axios.get("http://10.25.115.57:8000/ingest/news");
 
-    const data = response.data;
-    news.value = data.result;
-    totalItems.value = data.total_items;
-    totalPages.value = data.total_pages;
-    currentPage.value = data.page;
-    limit.value = data.limit;
+    // Acessa response.data.result conforme a estrutura da sua API
+    sources.value = response.data.result;
 
-    console.log("Dados da paginação:", {
-      página: data.page,
-      limite: data.limit,
-      total: data.total_items,
-      páginas: data.total_pages,
+    toast.add({
+      severity: "success",
+      summary: "Sucesso",
+      detail: `${sources.value.length} notícias carregadas`,
+      life: 3000,
     });
   } catch (error) {
     console.error("Erro ao carregar notícias:", error);
-    news.value = [];
-    totalItems.value = 0;
-    totalPages.value = 0;
+    toast.add({
+      severity: "error",
+      summary: "Erro",
+      detail: "Não foi possível carregar as notícias",
+      life: 5000,
+    });
+    sources.value = [];
   } finally {
     loading.value = false;
   }
 };
 
-const onPageChange = (event) => {
-  const newPage = event.page + 1; // PrimeVue usa base 0, sua API usa base 1
-  const itemsPerPage = event.rows;
-
-  console.log("Mudando para página:", newPage, "Limite:", itemsPerPage);
-  loadNews(newPage, itemsPerPage);
+const clearSearch = () => {
+  searchTerm.value = "";
 };
 
-const onSortChange = (event) => {
-  // Se sua API suportar ordenação, você pode implementar aqui
-  console.log("Ordenação alterada:", event);
-  // loadNews(currentPage.value, limit.value, event.sortField, event.sortOrder);
+const viewSource = (source) => {
+  toast.add({
+    severity: "info",
+    summary: "Detalhes da Fonte",
+    detail: `Visualizando: ${source.name}`,
+    life: 3000,
+  });
 };
 
-const getSourceSeverity = (source) => {
-  const severities = {
-    G1: "info",
-    metrópoles: "help",
-    CNN: "warning",
-    Folha: "success",
-  };
-  return severities[source] || "secondary";
-};
-
-const openNews = (url) => {
+const openWebsite = (url) => {
   window.open(url, "_blank", "noopener,noreferrer");
 };
 
 onMounted(() => {
-  loadNews();
+  loadSources();
 });
 </script>
 
 <style scoped>
-.news-container {
+.sources-container {
   padding: 1rem;
 }
 
-.news-title {
-  font-weight: 600;
-  line-height: 1.4;
+:deep(.p-inputtext) {
+  width: 300px;
 }
 
-:deep(.p-paginator) {
-  background: white;
-  border: 1px solid #e5e7eb;
-  padding: 0.75rem;
+:deep(.p-text-link) {
+  color: #2196f3;
+  text-decoration: none;
+  transition: color 0.2s;
 }
 
-:deep(.p-paginator .p-paginator-pages .p-paginator-page.p-highlight) {
-  background: #3b82f6;
-  color: white;
-  border-color: #3b82f6;
+:deep(.p-text-link:hover) {
+  color: #0d47a1;
+  text-decoration: underline;
 }
 </style>

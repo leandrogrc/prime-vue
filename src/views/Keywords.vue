@@ -5,13 +5,13 @@
         <div class="p-d-flex p-ai-center p-jc-between">
           <span>
             <i class="pi pi-globe p-mr-2"></i>
-            Lista de Fontes de Notícias
+            Lista de Palavras-Chave
           </span>
           <div class="p-d-flex p-ai-center">
             <span class="p-input-icon-left p-mr-3">
               <InputText
                 v-model="searchTerm"
-                placeholder="Buscar fontes..."
+                placeholder="Buscar keywords..."
                 class="p-inputtext-sm"
               />
             </span>
@@ -59,31 +59,31 @@
               </template>
             </Column>
 
-            <Column field="name" header="Nome da Fonte" :sortable="true">
+            <Column field="keyword" header="Keyword" :sortable="true">
               <template #body="slotProps">
                 <div class="p-d-flex p-ai-center">
                   <i class="pi pi-newspaper p-mr-2" style="color: #6366f1"></i>
-                  <span>{{ slotProps.data.name }}</span>
+                  <span>{{ slotProps.data.keyword }}</span>
                 </div>
               </template>
             </Column>
 
-            <Column field="href" header="URL" :sortable="true">
+            <Column field="is_hashtag" header="Hashtag" :sortable="true">
               <template #body="slotProps">
-                <a
-                  :href="slotProps.data.href"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="p-text-link"
-                >
-                  {{ slotProps.data.href }}
-                </a>
+                <Tag
+                  :value="slotProps.data.is_hashtag ? 'Sim' : 'Não'"
+                  :severity="slotProps.data.is_hashtag ? 'info' : 'secondary'"
+                />
               </template>
             </Column>
 
-            <Column field="status" header="Status">
+            <Column field="active" header="Ativa" :sortable="true">
               <template #body="slotProps">
-                <Tag value="Ativa" severity="success" icon="pi pi-check" />
+                <Tag
+                  :value="slotProps.data.active ? 'Ativa' : 'Inativa'"
+                  :severity="slotProps.data.active ? 'success' : 'danger'"
+                  :icon="slotProps.data.active ? 'pi pi-check' : 'pi pi-times'"
+                />
               </template>
             </Column>
 
@@ -157,7 +157,9 @@ const filteredSources = computed(() => {
 const loadSources = async () => {
   loading.value = true;
   try {
-    const response = await axios.get("http://10.25.115.57:8000/ingest/sources");
+    const response = await axios.get(
+      "http://10.25.115.57:8000/ingest/keywords"
+    );
 
     // Acessa response.data.result conforme a estrutura da sua API
     sources.value = response.data.result;
