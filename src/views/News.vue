@@ -31,6 +31,7 @@
             <span class="p-text-secondary">
               {{ filteredSources.length }} notícia(s) encontrada(s) de
               {{ sources.length }}
+              <span v-if="searchTerm">com o filtro "{{ searchTerm }}"</span>
             </span>
             <div v-if="searchTerm" class="p-d-flex p-ai-center">
               <span class="p-text-secondary p-mr-2">Filtro ativo:</span>
@@ -44,14 +45,17 @@
           </div>
 
           <DataTable
-            :value="filteredSources"
+            :value="paginatedSources"
             tableStyle="min-width: 50rem"
             :paginator="true"
-            :rows="10"
+            :rows="itemsPerPage"
+            :first="firstRecord"
             responsiveLayout="scroll"
             stripedRows
             :rowsPerPageOptions="[5, 10, 20, 50]"
             currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} notícias"
+            @page="onPageChange"
+            :totalRecords="filteredSources.length"
           >
             <Column field="id" header="ID" :sortable="true">
               <template #body="slotProps">
@@ -68,15 +72,23 @@
               </template>
             </Column>
 
-            <Column field="source" header="URL" :sortable="true">
+            <Column field="source" header="Fonte" :sortable="true">
+              <template #body="slotProps">
+                <span class="p-tag p-tag-info">{{
+                  slotProps.data.source
+                }}</span>
+              </template>
+            </Column>
+
+            <Column field="href" header="URL" :sortable="true">
               <template #body="slotProps">
                 <a
-                  :source="slotProps.data.source"
+                  :href="slotProps.data.href"
                   target="_blank"
                   rel="noopener noreferrer"
                   class="p-text-link"
                 >
-                  {{ slotProps.data.source }}
+                  {{ formatUrl(slotProps.data.href) }}
                 </a>
               </template>
             </Column>
@@ -88,6 +100,7 @@
                     icon="pi pi-external-link"
                     class="p-button-rounded p-button-help p-button-text"
                     @click="openWebsite(slotProps.data.href)"
+                    v-tooltip="'Abrir notícia'"
                   />
                 </div>
               </template>
@@ -97,12 +110,12 @@
               <div class="p-d-flex p-jc-center p-ai-center p-p-4">
                 <i class="pi pi-search p-mr-2" style="font-size: 2rem"></i>
                 <div>
-                  <h4>Nenhuma fonte encontrada</h4>
+                  <h4>Nenhuma notícia encontrada</h4>
                   <p class="p-text-secondary" v-if="searchTerm">
                     Tente ajustar os termos da busca: "{{ searchTerm }}"
                   </p>
                   <p class="p-text-secondary" v-else>
-                    Nenhuma fonte cadastrada no sistema
+                    Nenhuma notícia carregada no sistema
                   </p>
                 </div>
               </div>
@@ -116,7 +129,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from "vue";
-import { useToast } from "primevue/usetoast"; // Agora deve funcionar
+import { useToast } from "primevue/usetoast";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import Card from "primevue/card";
@@ -128,13 +141,15 @@ import ProgressSpinner from "primevue/progressspinner";
 import Toast from "primevue/toast";
 import axios from "axios";
 
-// Agora o useToast() deve funcionar corretamente
 const toast = useToast();
 const sources = ref([]);
 const searchTerm = ref("");
 const loading = ref(false);
+const currentPage = ref(1);
+const itemsPerPage = ref(10);
+const firstRecord = ref(0);
 
-// Computed para filtrar notícias
+// Computed para filtrar notícias localmente
 const filteredSources = computed(() => {
   if (!searchTerm.value) {
     return sources.value;
@@ -144,8 +159,17 @@ const filteredSources = computed(() => {
   return sources.value.filter(
     (source) =>
       source.title.toLowerCase().includes(term) ||
-      source.href.toLowerCase().includes(term)
+      source.text.toLowerCase().includes(term) ||
+      source.source.toLowerCase().includes(term) ||
+      (source.href && source.href.toLowerCase().includes(term))
   );
+});
+
+// Computed para paginação dos dados filtrados
+const paginatedSources = computed(() => {
+  const startIndex = (currentPage.value - 1) * itemsPerPage.value;
+  const endIndex = startIndex + itemsPerPage.value;
+  return filteredSources.value.slice(startIndex, endIndex);
 });
 
 const loadSources = async () => {
@@ -154,7 +178,7 @@ const loadSources = async () => {
     const response = await axios.get("http://10.25.115.57:8000/ingest/news");
 
     // Acessa response.data.result conforme a estrutura da sua API
-    sources.value = response.data.result;
+    sources.value = response.data.result || [];
 
     toast.add({
       severity: "success",
@@ -178,19 +202,32 @@ const loadSources = async () => {
 
 const clearSearch = () => {
   searchTerm.value = "";
+  currentPage.value = 1;
+  firstRecord.value = 0;
 };
 
-const viewSource = (source) => {
-  toast.add({
-    severity: "info",
-    summary: "Detalhes da Fonte",
-    detail: `Visualizando: ${source.name}`,
-    life: 3000,
-  });
+const formatUrl = (url) => {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.hostname + (urlObj.pathname !== "/" ? urlObj.pathname : "");
+  } catch {
+    return url.length > 50 ? url.substring(0, 50) + "..." : url;
+  }
 };
 
 const openWebsite = (url) => {
   window.open(url, "_blank", "noopener,noreferrer");
+};
+
+const onPageChange = (event) => {
+  // Atualiza a quantidade de itens por página se mudou
+  if (itemsPerPage.value !== event.rows) {
+    itemsPerPage.value = event.rows;
+  }
+
+  // Calcula a página baseada no first e rows
+  currentPage.value = Math.floor(event.first / event.rows) + 1;
+  firstRecord.value = event.first;
 };
 
 onMounted(() => {
@@ -216,5 +253,13 @@ onMounted(() => {
 :deep(.p-text-link:hover) {
   color: #0d47a1;
   text-decoration: underline;
+}
+
+:deep(.p-tag-info) {
+  background: #e3f2fd;
+  color: #1565c0;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
 }
 </style>
