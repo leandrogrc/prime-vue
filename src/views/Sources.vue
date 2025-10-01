@@ -29,17 +29,24 @@
         <div v-else>
           <div class="p-mb-3 p-d-flex p-ai-center p-jc-between">
             <span class="p-text-secondary">
-              {{ filteredSources.length }} fonte(s) encontrada(s) de
-              {{ sources.length }}
+              Mostrando {{ filteredSources.length }} fonte(s)
+              <span v-if="!searchTerm">
+                (Página {{ currentPage }} de {{ totalPages }})
+              </span>
             </span>
-            <div v-if="searchTerm" class="p-d-flex p-ai-center">
-              <span class="p-text-secondary p-mr-2">Filtro ativo:</span>
-              <Chip
-                :label="searchTerm"
-                icon="pi pi-filter"
-                removable
-                @remove="clearSearch"
-              />
+            <div class="p-d-flex p-ai-center p-gap-2">
+              <span class="p-text-secondary">
+                Total: {{ totalItems }} fonte(s)
+              </span>
+              <div v-if="searchTerm" class="p-d-flex p-ai-center">
+                <span class="p-text-secondary p-mr-2">Filtro ativo:</span>
+                <Chip
+                  :label="searchTerm"
+                  icon="pi pi-filter"
+                  removable
+                  @remove="clearSearch"
+                />
+              </div>
             </div>
           </div>
 
@@ -47,11 +54,14 @@
             :value="filteredSources"
             tableStyle="min-width: 50rem"
             :paginator="true"
-            :rows="10"
+            :rows="pageSize"
+            :first="firstRecordIndex"
+            :totalRecords="totalItems"
             responsiveLayout="scroll"
             stripedRows
             :rowsPerPageOptions="[5, 10, 20, 50]"
             currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} fontes"
+            @page="onPageChange"
           >
             <Column field="id" header="ID" :sortable="true">
               <template #body="slotProps">
@@ -114,6 +124,30 @@
               </div>
             </template>
           </DataTable>
+
+          <!-- Controles de paginação customizados -->
+          <div
+            v-if="!searchTerm && totalPages > 1"
+            class="p-mt-3 p-d-flex p-ai-center p-jc-between"
+          >
+            <div class="p-text-secondary">
+              Página {{ currentPage }} de {{ totalPages }}
+            </div>
+            <div class="p-d-flex p-gap-2">
+              <Button
+                icon="pi pi-chevron-left"
+                class="p-button-outlined"
+                :disabled="currentPage <= 1"
+                @click="goToPage(currentPage - 1)"
+              />
+              <Button
+                icon="pi pi-chevron-right"
+                class="p-button-outlined"
+                :disabled="currentPage >= totalPages"
+                @click="goToPage(currentPage + 1)"
+              />
+            </div>
+          </div>
         </div>
       </template>
     </Card>
@@ -122,7 +156,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from "vue";
-import { useToast } from "primevue/usetoast"; // Agora deve funcionar
+import { useToast } from "primevue/usetoast";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import Card from "primevue/card";
@@ -134,13 +168,19 @@ import ProgressSpinner from "primevue/progressspinner";
 import Toast from "primevue/toast";
 import axios from "axios";
 
-// Agora o useToast() deve funcionar corretamente
 const toast = useToast();
 const sources = ref([]);
 const searchTerm = ref("");
 const loading = ref(false);
 
-// Computed para filtrar fontes
+// Variáveis de paginação
+const currentPage = ref(1);
+const pageSize = ref(10);
+const totalItems = ref(0);
+const totalPages = ref(1);
+const firstRecordIndex = ref(0);
+
+// Computed para filtrar fontes (apenas para busca local)
 const filteredSources = computed(() => {
   if (!searchTerm.value) {
     return sources.value;
@@ -154,22 +194,35 @@ const filteredSources = computed(() => {
   );
 });
 
-const loadSources = async () => {
+const loadSources = async (page = 1, limit = 10) => {
   loading.value = true;
   try {
-    const response = await axios.get("http://10.25.115.57:8000/ingest/sources");
+    const response = await axios.get(
+      "http://10.25.115.57:8000/ingest/sources",
+      {
+        params: {
+          page: page,
+          limit: limit,
+        },
+      }
+    );
 
-    // Acessa response.data.result conforme a estrutura da sua API
+    // Atualiza os dados com a resposta da API
     sources.value = response.data.result;
+    totalItems.value = response.data.total_items;
+    totalPages.value = response.data.total_pages;
+    currentPage.value = response.data.page;
+    pageSize.value = response.data.limit;
+
+    // Calcula o índice do primeiro registro para a paginação
+    firstRecordIndex.value = (currentPage.value - 1) * pageSize.value;
 
     toast.add({
       severity: "success",
       summary: "Sucesso",
-      detail: `${sources.value.length} fontes carregadas`,
+      detail: `Página ${currentPage.value} carregada (${sources.value.length} fontes)`,
       life: 3000,
     });
-
-    console.log("Fontes carregadas:", sources.value);
   } catch (error) {
     console.error("Erro ao carregar fontes:", error);
     toast.add({
@@ -179,8 +232,26 @@ const loadSources = async () => {
       life: 5000,
     });
     sources.value = [];
+    totalItems.value = 0;
+    totalPages.value = 1;
+    currentPage.value = 1;
   } finally {
     loading.value = false;
+  }
+};
+
+// Manipula mudança de página no DataTable
+const onPageChange = (event) => {
+  const newPage = Math.floor(event.first / pageSize.value) + 1;
+  if (newPage !== currentPage.value) {
+    goToPage(newPage);
+  }
+};
+
+// Navega para uma página específica
+const goToPage = (page) => {
+  if (page >= 1 && page <= totalPages.value) {
+    loadSources(page, pageSize.value);
   }
 };
 
@@ -188,21 +259,12 @@ const clearSearch = () => {
   searchTerm.value = "";
 };
 
-const viewSource = (source) => {
-  toast.add({
-    severity: "info",
-    summary: "Detalhes da Fonte",
-    detail: `Visualizando: ${source.name}`,
-    life: 3000,
-  });
-};
-
 const openWebsite = (url) => {
   window.open(url, "_blank", "noopener,noreferrer");
 };
 
 onMounted(() => {
-  loadSources();
+  loadSources(1, 10);
 });
 </script>
 
