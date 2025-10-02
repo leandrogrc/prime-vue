@@ -4,17 +4,17 @@ const routes = [
   {
     path: "/fontes",
     name: "Fontes",
-    component: () => import("../src/views/Sources.vue"),
+    component: () => import("../src/views/sources/index.vue"),
   },
   {
     path: "/noticias",
     name: "Notícias",
-    component: () => import("../src/views/News.vue"),
+    component: () => import("../src/views/news/index.vue"),
   },
   {
     path: "/keywords",
     name: "Keywords",
-    component: () => import("../src/views/Keywords.vue"),
+    component: () => import("../src/views/keywords/index.vue"),
   },
 ];
 
