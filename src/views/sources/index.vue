@@ -381,10 +381,10 @@
 
 <script setup>
 import { ref, onMounted, computed } from "vue";
-import { useToast } from "primevue/usetoast";
+// import { useToast } from "primevue/usetoast";
 import axios from "axios";
 
-const toast = useToast();
+// const toast = useToast();
 const sources = ref([]);
 const searchTerm = ref("");
 const loading = ref(false);
@@ -604,12 +604,12 @@ const loadSources = async () => {
     });
   } catch (error) {
     console.error("Erro ao carregar fontes:", error);
-    toast.add({
-      severity: "error",
-      summary: "Erro",
-      detail: "Não foi possível carregar as fontes",
-      life: 5000,
-    });
+    // toast.add({
+    //   severity: "error",
+    //   summary: "Erro",
+    //   detail: "Não foi possível carregar as fontes",
+    //   life: 5000,
+    // });
     sources.value = [];
     totalItems.value = 0;
     totalPages.value = 1;
@@ -647,21 +647,21 @@ const openWebsite = (url) => {
 };
 
 const testConnection = (source) => {
-  toast.add({
-    severity: "info",
-    summary: "Teste de Conexão",
-    detail: `Testando conexão com: ${source.name}`,
-    life: 3000,
-  });
+  // toast.add({
+  //   severity: "info",
+  //   summary: "Teste de Conexão",
+  //   detail: `Testando conexão com: ${source.name}`,
+  //   life: 3000,
+  // });
 };
 
 const viewStats = (source) => {
-  toast.add({
-    severity: "info",
-    summary: "Estatísticas",
-    detail: `Abrindo estatísticas de: ${source.name}`,
-    life: 3000,
-  });
+  // toast.add({
+  //   severity: "info",
+  //   summary: "Estatísticas",
+  //   detail: `Abrindo estatísticas de: ${source.name}`,
+  //   life: 3000,
+  // });
 };
 
 onMounted(() => {

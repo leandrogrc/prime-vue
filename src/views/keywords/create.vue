@@ -163,10 +163,10 @@
 
 <script setup>
 import { ref, reactive } from "vue";
-import { useToast } from "primevue/usetoast";
+// import { useToast } from "primevue/usetoast";
 import axios from "axios";
 
-const toast = useToast();
+// const toast = useToast();
 const loading = ref(false);
 
 // Emit events
@@ -227,12 +227,12 @@ const submitForm = async () => {
       }
     );
 
-    toast.add({
-      severity: "success",
-      summary: "Sucesso",
-      detail: "Palavra-chave criada com sucesso!",
-      life: 5000,
-    });
+    // toast.add({
+    //   severity: "success",
+    //   summary: "Sucesso",
+    //   detail: "Palavra-chave criada com sucesso!",
+    //   life: 5000,
+    // });
 
     // Reset form
     form.keyword = "";
@@ -252,12 +252,12 @@ const submitForm = async () => {
       errorMessage = "Esta palavra-chave já existe no sistema";
     }
 
-    toast.add({
-      severity: "error",
-      summary: "Erro",
-      detail: errorMessage,
-      life: 5000,
-    });
+    // toast.add({
+    //   severity: "error",
+    //   summary: "Erro",
+    //   detail: errorMessage,
+    //   life: 5000,
+    // });
   } finally {
     loading.value = false;
   }

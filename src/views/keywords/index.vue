@@ -464,10 +464,10 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed } from "vue";
-import { useToast } from "primevue/usetoast";
+// import { useToast } from "primevue/usetoast";
 import axios from "axios";
 
-const toast = useToast();
+// const toast = useToast();
 const keywords = ref([]);
 const searchTerm = ref("");
 const loading = ref(false);
@@ -541,12 +541,12 @@ const createKeyword = async () => {
       }
     );
 
-    toast.add({
-      severity: "success",
-      summary: "Sucesso",
-      detail: "Palavra-chave criada com sucesso!",
-      life: 5000,
-    });
+    // toast.add({
+    //   severity: "success",
+    //   summary: "Sucesso",
+    //   detail: "Palavra-chave criada com sucesso!",
+    //   life: 5000,
+    // });
 
     cancelCreate();
     loadKeywords(currentPage.value, pageSize.value);
@@ -560,12 +560,12 @@ const createKeyword = async () => {
       errorMessage = "Esta palavra-chave já existe no sistema";
     }
 
-    toast.add({
-      severity: "error",
-      summary: "Erro",
-      detail: errorMessage,
-      life: 5000,
-    });
+    // toast.add({
+    //   severity: "error",
+    //   summary: "Erro",
+    //   detail: errorMessage,
+    //   life: 5000,
+    // });
   } finally {
     creating.value = false;
   }
@@ -606,12 +606,12 @@ const loadKeywords = async (page = 1, limit = 10) => {
     });
   } catch (error) {
     console.error("Erro ao carregar palavras-chave:", error);
-    toast.add({
-      severity: "error",
-      summary: "Erro",
-      detail: "Não foi possível carregar as palavras-chave",
-      life: 5000,
-    });
+    // toast.add({
+    //   severity: "error",
+    //   summary: "Erro",
+    //   detail: "Não foi possível carregar as palavras-chave",
+    //   life: 5000,
+    // });
     keywords.value = [];
     totalItems.value = 0;
     totalPages.value = 1;
@@ -633,12 +633,12 @@ const clearSearch = () => {
 };
 
 const editKeyword = (keyword) => {
-  toast.add({
-    severity: "warn",
-    summary: "Editar Palavra-Chave",
-    detail: `Editando: ${keyword.keyword}`,
-    life: 3000,
-  });
+  // toast.add({
+  //   severity: "warn",
+  //   summary: "Editar Palavra-Chave",
+  //   detail: `Editando: ${keyword.keyword}`,
+  //   life: 3000,
+  // });
 };
 
 onMounted(() => {

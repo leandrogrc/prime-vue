@@ -122,11 +122,11 @@
 <script setup>
 import { ref, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
-import { useToast } from "primevue/usetoast";
+// import { useToast } from "primevue/usetoast";
 
 const router = useRouter();
 const route = useRoute();
-const toast = useToast();
+// const toast = useToast();
 const showMobileMenu = ref(false);
 
 // Dados mockados do usuário
@@ -193,12 +193,12 @@ const handleMobileNav = (item) => {
 
 const handleLogout = () => {
   // Simulação de logout
-  toast.add({
-    severity: "info",
-    summary: "Logout",
-    detail: "Saindo do sistema...",
-    life: 3000,
-  });
+  // toast.add({
+  //   severity: "info",
+  //   summary: "Logout",
+  //   detail: "Saindo do sistema...",
+  //   life: 3000,
+  // });
 
   // Aqui você implementaria a lógica real de logout
   setTimeout(() => {

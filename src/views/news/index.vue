@@ -357,10 +357,10 @@
 
 <script setup>
 import { ref, onMounted, computed } from "vue";
-import { useToast } from "primevue/usetoast";
+// import { useToast } from "primevue/usetoast";
 import axios from "axios";
 
-const toast = useToast();
+// const toast = useToast();
 const sources = ref([]);
 const searchTerm = ref("");
 const loading = ref(false);
@@ -542,12 +542,12 @@ const loadSources = async () => {
     });
   } catch (error) {
     console.error("Erro ao carregar notícias:", error);
-    toast.add({
-      severity: "error",
-      summary: "Erro",
-      detail: "Não foi possível carregar as notícias",
-      life: 5000,
-    });
+    // toast.add({
+    //   severity: "error",
+    //   summary: "Erro",
+    //   detail: "Não foi possível carregar as notícias",
+    //   life: 5000,
+    // });
     sources.value = [];
     totalItems.value = 0;
     totalPages.value = 1;
@@ -586,12 +586,12 @@ const openWebsite = (url) => {
 
 const shareNews = (news) => {
   // Simulação de compartilhamento
-  toast.add({
-    severity: "info",
-    summary: "Compartilhar",
-    detail: `Compartilhando: ${news.title}`,
-    life: 3000,
-  });
+  // toast.add({
+  //   severity: "info",
+  //   summary: "Compartilhar",
+  //   detail: `Compartilhando: ${news.title}`,
+  //   life: 3000,
+  // });
 };
 
 onMounted(() => {
